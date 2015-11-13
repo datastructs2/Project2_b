@@ -5,17 +5,18 @@ using namespace std;
 class Library{
 private:
 	list<Book> BookList;		// Books to be circulated to employees
-	list<Book> ArchivedBooks;	// archived books
+	list<Book> ArchivedBooks;	// archived books; these are books already circulated
 
 public:
 	
-	void add_book(Book somebook) {	// add book to archived Books
+	void add_book(Book somebook) {	// add book to BookList
 		list<Book>::iterator iterator = ArchivedBooks.begin();
 		bool found = false;
 		while (found == false){
 			while (iterator != ArchivedBooks.end()){
 				if (iterator->get_title() == somebook.get_title()){
-					cout << somebook.get_title() << " already here" << endl << endl;
+					cout << somebook.get_title() << " already circulated" << endl << endl;
+					print_archived();
 					found = true;
 					return;
 				}
@@ -23,11 +24,11 @@ public:
 
 			}
 			if (found == false){
-				ArchivedBooks.push_back(somebook);
+				BookList.push_back(somebook);
 				cout << somebook.get_title() << " added to library" << endl << endl;
 			}
 
-			print_archived();
+			print_BookList();
 			//print_BookList();
 
 			found = true;
@@ -35,7 +36,9 @@ public:
 		}
 	}
 
-	void add_employee(Employee someone, Book somebook){
+
+	//void add_employee(Employee someone, Book somebook){
+	void add_employee(Employee* someone, Book somebook){
 		list<Book>::iterator iterator = ArchivedBooks.begin();
 		
 		bool found = false;
@@ -49,16 +52,9 @@ public:
 				title = iterator->get_title();
 				if (title == somebook.get_title()){
 					cout << somebook.get_title() << " found in Archived Books" << endl;
-					somebook.add_employee(someone);
-					if (somebook.get_size() != 0){
-						cout << "added " << someone.get_employee() << " to "
-							<< somebook.get_title() << " queue" << endl;
-					}
-					BookList.push_back(somebook);
-					ArchivedBooks.erase(iterator);
-					cout << somebook.get_title() << " was removed from Archived." << endl << endl;
 					print_archived();
-					//print_BookList();
+					cout << "Can't add employees to Archived Books" << endl;
+				
 					found = true;
 					return;
 				}
@@ -72,17 +68,16 @@ public:
 				title = iterator->get_title();
 				if (title == somebook.get_title()){
 					cout << somebook.get_title() << " found in Book List" << endl;
-					///????? Are there other books with same title and less of a line?
 					
 					iterator->add_employee(someone);
 
 
-					if (somebook.get_size() != 0){
-						cout << "added " << someone.get_employee() << " to "
+					if (iterator->get_size() != 0){
+						//cout << "added " << someone.get_employee() << " to "
+						cout << "added " << (*someone).get_employee() << " to "
 							<< somebook.get_title() << " queue" << endl << endl;
 					}
 					
-					//print_BookList();
 					found = true;
 					return;
 				}
@@ -96,26 +91,90 @@ public:
 
 	void circulate_book(Book somebook, Date startdate){
 		list<Book>::iterator iterator = BookList.begin();
+		Date enddate;
 		while (iterator != BookList.end()){
 			if (iterator->get_title() == somebook.get_title()){
+				cout << somebook.get_title() << " has begun circulation" << endl << endl;
 				iterator->set_start(startdate);
-				iterator->set_end(iterator->get_days_added());
+				iterator->set_end(iterator->get_days_added()); 
+				break;
+			}
+			iterator++;
+		}
+		enddate = iterator->get_end();
+		cout << "Book circulation will begin : " << startdate.toString() << endl;
+		print_BookList();
+		cout << "\n";
+		if (enddate == startdate)
+			cout << "Book circulation should end : Can't determine currently" << endl << endl;
+		else
+		cout << "Book circulation should end: " << iterator->get_end() << endl << endl;
+		
+	}
+	
+	void pass_on(Book somebook , Date new_retaining_end){//, Date end_of_retaining){
+		list<Book>::iterator iterator = BookList.begin();
+		string title;
+		bool found = false;
+		while (iterator != BookList.end())  {
+			title = iterator->get_title();
+			if (title == somebook.get_title())  {
+				found = true;
+				if (iterator->get_size() > 1)  {// if this is not the only person in the waiting list
+					
+					iterator->set_top_retaining(new_retaining_end);
+					cout << iterator->get_title() << " was passed on by: " << endl
+						<< iterator->get_top() << endl;
+
+					Employee current_employee = iterator->get_top();
+					int days_held = iterator->get_top_retaining();
+					
+					iterator->pop_employee();
+					if (current_employee.get_waiting() == 0){
+						cout << "Book given to next in line:"<< endl << iterator->get_top() << endl;
+					}
+					else
+					cout << "Book given to :" << endl<< iterator->get_top() << endl;
+			
+					// retaining times, and the start and end dates
+					Date current_start = iterator->get_start_date();
+					current_start.add_days(days_held);
+					iterator->set_start(current_start);
+					int days_left = iterator->get_days_added() - days_held;
+					
+					iterator->set_end(days_left);
+					print_BookList();
+					break;
+				}
+
+				else{
+					iterator->set_top_retaining(new_retaining_end);
+
+					int days_held = iterator->get_top_retaining();
+
+					cout << iterator->get_title() << " was returned to the Library" << endl;
+					cout << "Retaining was updated" << endl;
+					cout << (*iterator).get_top() << endl;
+						iterator->pop_employee();
+						// update retaining times
+						ArchivedBooks.push_back(iterator->get_title());
+						BookList.erase(iterator);
+						print_archived();
+						break;
+						
+				}
+
 			}
 			iterator++;
 		}
 
-		print_BookList();
+		if (found == false){
+			cout << "book to pass on was not found" << endl << endl;
+		}
+			
+		
 	}
 	
-	void pass_on(Book somebook, Date end_of_retaining){
-		if (somebook.get_size() == 1){	// if this is the only person in the waiting list
-			somebook.pop_employee();	// then empty the queue
-			add_book(somebook);			// and return the book to archived books
-		}
-		else{
-			// ?????????????????? book gets handed to the next person who has highest priority
-		}
-	}
 
 	void print_archived(){
 		cout << "Showing Archived Books: " << endl << endl;
@@ -145,16 +204,6 @@ public:
 			cout << "There are currently no books checked out." << endl;
 		}
 		cout << "\n" << endl;
-	}
-
-	void delete_all(){
-		if (BookList.size() != 0){
-			list<Book>::iterator iterator = BookList.begin();
-			while (iterator != BookList.end()){
-				iterator->manual_delete();
-				iterator++;
-			}
-		}
 	}
 
 };
