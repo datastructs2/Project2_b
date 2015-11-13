@@ -13,13 +13,30 @@ public:
 	// CONSTRUCTOR
 	Employee(string employee){
 		name = employee;
-		retaining_time = 7; // for now all employees have equal times
-		waiting_time = 0;
+		
+		//default these to zero since we don't know them yet
+		retaining_time = 0; 
+		waiting_time = 0; 
 
 	}
 	
+
+	//COPY CONSTRUCTOR
+	Employee(const Employee& other){
+		*this = other;
+	}
+	//OVERLOAD ASSIGNMENT
+	const Employee& operator=(const Employee& rhs){
+		if (this != &rhs){
+			name = rhs.name;
+			waiting_time = rhs.waiting_time;
+			retaining_time = rhs.retaining_time;
+		}
+		return *this;
+	}
+
 	// GETTERS
-	string get_employee()const{
+	string get_employee(){
 		return name;
 	}
 
@@ -40,29 +57,32 @@ public:
 	}
 
 	// CLASS BASED FUNCTIONS
+
+	//for retaining
 	friend ostream& operator << (ostream& out, Employee& someone) {
 		out << "Name: " << someone.get_employee() << endl;
 		if (someone.get_waiting() == 0){
-			out << "Waiting time: " << someone.get_waiting() << " (currently has book)" << endl
-				<< "Time to have book: " << someone.get_retaining() << endl << endl;
+			out << "Days Employee had book: " << someone.get_retaining() << endl << endl;
 		}
 		else{
 			out << "Waiting time: " << someone.get_waiting() << endl
-			<< "Time to have book: " << someone.get_retaining() << endl << endl;
+			<< "Days retained: " << someone.get_retaining() << endl << endl;
 		}
 		return out;
 	}
 
+	
+
 	void print(){
 
 	cout << "Name: " << get_employee() << endl;
-	if (get_waiting() == 0){
-	cout << "Waiting time: " << get_waiting() << " (currently has book)" << endl
-	<< "Time to have book: " << get_retaining() << endl << endl;
+	if (get_retaining() == 0){
+	cout << "Waiting time: " << get_waiting() << endl
+	<< "Days retained last: " << get_retaining() << " (unknown)" << endl << endl;
 	}
 	else{
 	cout << "Waiting time: " << get_waiting() << endl
-	<< "Time to have book: " << get_retaining() << endl << endl;
+	<< "Days retained last: " << get_retaining() << endl << endl;
 	}
 	}
 
