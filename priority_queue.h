@@ -1,91 +1,29 @@
-#include <cstddef>
+#include <vector>
+#include <functional>
 
-template<typename Item_Type>
-class PriorityQueue {
-private:
-	// Insert implementation-specific data fields
-	// Insert definition of Node here
-#include "Node.h"
-	// Data fields
-	Node* front_of_queue;
-	Node* back_of_queue;
-	size_t num_items;
-	bool is_empty;
+using namespace std;
 
+template<typename Item_Type, typename Compare = std::less<Item_Type> >
+class priority_queue{
 public:
+	priority_queue() {};
 
-	PriorityQueue(Node* front_of_queue = NULL, Node* back_of_queue = NULL) :
-		front_of_queue(front_of_queue), back_of_queue(back_of_queue), num_items(0) {}
-
-	void push(const Item_Type& item) {
-		if (front_of_queue == NULL) {
-			back_of_queue = new Node(item, NULL);
-			front_of_queue = back_of_queue;
-			back_of_queue = new Node(item, NULL);
-			front_of_queue = back_of_queue;
-		}
-		else {
-			back_of_queue->next = new Node(item, NULL);
-			back_of_queue = back_of_queue->next;
-		}
-		num_items++;
-	}
+	void push(const Item_Type& item);
+	void pop();
+	const Item_Type& front() const { return the_data.front(); }
+	const Item_Type& Index(int index) const{ return the_data[index]; }
 
 
-	Item_Type& front() {
-		return front_of_queue->data;
+	int size() const { return the_data.size(); }
 
-	}
+	bool empty() const { return the_data.empty(); }
 
-	int size(){
-		return num_items;
-	}
-
-	bool empty(){
-		if (num_items == 0){
-			return true;
-		}
-		else
-			return false;
-	}
-
-	bool operator <(const PriorityQueue& other) const{
-			return front_of_queue < other.front_of_queue;
-	}
-
-	void pop() {
-		Node* old_front = front_of_queue;
-		
-		front_of_queue = front_of_queue->next;
-		if (front_of_queue == NULL) {
-			back_of_queue = NULL;
-		}
-		delete old_front;
-		
-		num_items--;
-	}
-
-	template <typename ItemType>
-	void removeItem(const ItemType item, PriorityQueue<ItemType>& queue){
-		int count = 0;
-		while (count < queue.size()){
-			if (queue.front() != item)
-				queue.push(queue.front());
-
-			queue.pop();
-			count++;
-		}
-	}
-	//template<typename ItemType>
 	void printItems(){
 		int count = 0;
 		while (count < size())
 		{
 
-			cout << "[" << front() << "]";
-			push(front());
-
-			pop();
+			cout << "[" << the_data[count] << "]";
 			count++;
 
 			if (count < size()){
@@ -99,12 +37,10 @@ public:
 		int count = 0;
 		while (count < size())
 		{
-			cout << "[" << endl;
-			front()->print();// the object MUST have a print function for this to work
+			cout << "[";
+			(the_data[count])->print();
 			cout << "]";
-			push(front());
-
-			pop();
+			
 			count++;
 
 			if (count < size()){
@@ -113,4 +49,90 @@ public:
 		}
 		cout << "\n" << "\n";
 	}
+
+	//change priority based on index
+	void change_priority(int index, Item_Type new_priority){
+
+		the_data[index] = new_priority;
+		//compare with parent
+		int parent = (index - 1) / 2;
+		int child = index;
+		bool swap = false;
+
+		while (parent >= 0
+			&& comp(the_data[parent], the_data[child])) {
+			std::swap(the_data[child], the_data[parent]);
+			child = parent;
+			parent = (child - 1) / 2;
+			swap = true;
+		}
+
+		//if we made a swap we don't need to go down
+		if (!swap){
+			parent = index;
+
+			while (true) {
+				int left_child = 2 * parent + 1;
+				if (left_child >= size()) break; // out of heap
+				int right_child = left_child + 1;
+				int max_child = left_child;
+				if (right_child < size()
+					&& comp(the_data[left_child], the_data[right_child]))
+					max_child = right_child;
+				if (comp(the_data[parent], the_data[max_child])) {
+					std::swap(the_data[max_child], the_data[parent]);
+					parent = max_child;
+				}
+				else break;
+			}
+		}
+	}
+
+private:
+	Compare comp;
+	vector<Item_Type> the_data;
 };
+
+
+template<typename Item_Type, typename Compare>
+void priority_queue<Item_Type, Compare>::pop() {
+	if (size() == 1) { 
+		the_data.pop_back(); 
+		return; 
+	}
+	std::swap(the_data[0], the_data[size() - 1]);
+	the_data.pop_back();
+	int parent = 0;
+	while (true) {
+		int left_child = 2 * parent + 1;
+		if (left_child >= size()) break; // out of heap
+		int right_child = left_child + 1;
+		int max_child = left_child;
+		if (right_child < size()
+			&& comp(the_data[left_child], the_data[right_child]))
+			max_child = right_child;
+		if (comp(the_data[parent], the_data[max_child])) {
+			std::swap(the_data[max_child], the_data[parent]);
+			parent = max_child;
+		}
+		else break;
+	}
+
+
+}
+
+template<typename Item_Type, typename Compare>
+void priority_queue < Item_Type, Compare > ::push(const Item_Type& item) {
+	the_data.push_back(item);
+	int child = size() - 1;
+	int parent = (child - 1) / 2;
+	// Reheap
+	while (parent >= 0
+		&& comp(the_data[parent], the_data[child])) {
+		std::swap(the_data[child], the_data[parent]);
+		child = parent;
+		parent = (child - 1) / 2;
+	}
+}
+
+
